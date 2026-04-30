@@ -18,7 +18,6 @@ import { PageLoader, FloatingActions } from './components/FloatingActions';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Amenities } from './components/Amenities';
 import { ChatBot } from './components/ChatBot';
-import { PromoVideo } from './components/PromoVideo';
 
 export default function App() {
   return (
@@ -29,7 +28,6 @@ export default function App() {
         
         <main>
           <Hero />
-          <PromoVideo />
           <About />
           <Amenities />
           <Stats />

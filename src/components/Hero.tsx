@@ -6,8 +6,15 @@ export const Hero: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [mousePos, setMousePos] = React.useState({ x: 0, y: 0 });
   const mouse = useRef({ x: 0, y: 0 });
-  const { scrollY } = useScroll();
-  const yParallax = useTransform(scrollY, [0, 1000], [0, 400]);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.play().catch(() => {
+        // Silent catch for autoplay blocking
+      });
+    }
+  }, []);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -159,22 +166,30 @@ export const Hero: React.FC = () => {
       {/* Dynamic Background Video */}
       <div className="absolute inset-0 z-0">
         <video 
+          ref={videoRef}
           autoPlay 
           muted 
           loop 
           playsInline
+          preload="auto"
+          onTimeUpdate={(e) => {
+            const video = e.currentTarget;
+            if (video.currentTime >= 30) {
+              video.currentTime = 0;
+            }
+          }}
           className="w-full h-full object-cover scale-105"
         >
           <source 
-            src="https://assets.mixkit.co/videos/preview/mixkit-man-training-at-the-gym-with-dumbbells-2300-large.mp4" 
+            src="https://github.com/janaryalfaro3-lab/north-fitness-camp/blob/main/video.mp4.mp4?raw=true" 
             type="video/mp4" 
           />
           Your browser does not support the video tag.
         </video>
         {/* Cinematic Overlays */}
-        <div className="absolute inset-0 bg-black/60" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40" />
-        <div className="absolute inset-0 bg-primary/20 mix-blend-color" />
+        <div className="absolute inset-0 bg-black/40" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/60" />
+        <div className="absolute inset-0 bg-primary/5 animate-pulse-slow" />
       </div>
 
       {/* Three.js Particle Layer */}
@@ -198,15 +213,15 @@ export const Hero: React.FC = () => {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1, delay: 0.2 }}
-          className="text-white text-4xl md:text-7xl lg:text-8xl font-display font-bold leading-tight mb-8 drop-shadow-[0_0_50px_rgba(255,0,0,0.4)] uppercase"
+          className="text-white text-5xl md:text-8xl lg:text-9xl font-display font-black leading-[0.9] mb-8 drop-shadow-[0_0_50px_rgba(255,0,0,0.5)] uppercase italic tracking-tighter"
         >
           FORGE YOUR <br />
           <span className="text-primary text-shadow-3d relative inline-block">
             STRONGEST
             <motion.span 
-              className="absolute -inset-8 bg-primary/30 blur-[100px] rounded-full -z-10"
-              animate={{ opacity: [0.4, 0.8, 0.4], scale: [1, 1.2, 1] }}
-              transition={{ duration: 4, repeat: Infinity }}
+              className="absolute -inset-12 bg-primary/40 blur-[120px] rounded-full -z-10"
+              animate={{ opacity: [0.3, 0.7, 0.3], scale: [1, 1.3, 1] }}
+              transition={{ duration: 5, repeat: Infinity }}
             />
           </span> SELF
         </motion.h1>
