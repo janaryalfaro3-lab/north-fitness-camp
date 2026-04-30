@@ -1,10 +1,10 @@
 {
-  "projectId": "prompt-forge-31066",
-  "appId": "1:991553395393:web:36c9f2c9ecedd035861240",
-  "apiKey": "AIzaSyA5JtIsQug6SztWx1KfDhV4watpLcWXkXI",
-  "authDomain": "prompt-forge-31066.firebaseapp.com",
+  "projectId": "gen-lang-client-0329788996",
+  "appId": "1:77719005196:web:39a775d2fe4499d27ea629",
+  "apiKey": "AIzaSyCqOjy4_kjyzyWamosKIsenCuZmbRyYe8E",
+  "authDomain": "gen-lang-client-0329788996.firebaseapp.com",
   "firestoreDatabaseId": "ai-studio-b0328a94-c804-4dde-834e-15235d5b8752",
-  "storageBucket": "prompt-forge-31066.firebasestorage.app",
-  "messagingSenderId": "991553395393",
+  "storageBucket": "gen-lang-client-0329788996.firebasestorage.app",
+  "messagingSenderId": "77719005196",
   "measurementId": ""
 }

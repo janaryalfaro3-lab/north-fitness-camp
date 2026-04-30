@@ -18,11 +18,15 @@ import { PageLoader, FloatingActions } from './components/FloatingActions';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Amenities } from './components/Amenities';
 import { ChatBot } from './components/ChatBot';
+import { BookingCalendar } from './components/BookingCalendar';
+import { SocialFeed } from './components/SocialFeed';
 
 export default function App() {
   return (
     <ErrorBoundary>
-      <div className="relative min-h-screen bg-background text-white selection:bg-primary selection:text-background">
+      <div className="relative min-h-screen bg-zinc-950 text-white selection:bg-primary selection:text-background">
+        <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,0,0,0.05),transparent_50%)] pointer-events-none" />
+        <div className="fixed inset-0 bg-[radial-gradient(circle_at_0%_50%,rgba(255,100,0,0.02),transparent_40%)] pointer-events-none" />
         <PageLoader />
         <Navbar />
         
@@ -33,8 +37,10 @@ export default function App() {
           <Stats />
           <Programs />
           <Coaches />
+          <BookingCalendar />
           <Schedule />
           <Testimonials />
+          <SocialFeed />
           <EnrollmentForm />
           <Newsletter />
         </main>

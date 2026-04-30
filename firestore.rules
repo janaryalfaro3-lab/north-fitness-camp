@@ -20,8 +20,9 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      // Hardcoded admin email for North Fitness Camp
-      return isEmailVerified() && request.auth.token.email == "thefitnesscamp23@gmail.com";
+      // Admin emails for North Fitness Camp
+      let admins = ["thefitnesscamp23@gmail.com", "jaesthetic.info@gmail.com"];
+      return isEmailVerified() && request.auth.token.email in admins;
     }
 
     function isValidId(id) {

@@ -9,7 +9,9 @@ const CoachCard: React.FC<{
   gender: string;
   image: string;
   offer?: string;
-}> = ({ name, title, tags, exp, gender, image, offer }) => {
+  quote?: string;
+  funFact?: string;
+}> = ({ name, title, tags, exp, gender, image, offer, quote, funFact }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [rotate, setRotate] = useState({ x: 0, y: 0 });
 
@@ -36,8 +38,9 @@ const CoachCard: React.FC<{
       onMouseLeave={handleMouseLeave}
       animate={{ rotateX: rotate.x, rotateY: rotate.y }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      className="relative bg-secondary/40 backdrop-blur-xl p-8 border border-white/5 preserve-3d perspective-1000 group overflow-hidden shadow-2xl hover:shadow-lime-400/10 transition-all duration-500 rounded-[2.5rem]"
+      className="relative bg-zinc-900/40 backdrop-blur-2xl p-8 border border-white/10 preserve-3d perspective-1000 group overflow-hidden shadow-2xl hover:shadow-lime-400/5 transition-all duration-700 rounded-[2.5rem] flex flex-col h-full"
     >
+      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
       <div className="absolute inset-0 cyber-grid opacity-5 pointer-events-none" />
       
       {/* Certified Badge */}
@@ -47,10 +50,10 @@ const CoachCard: React.FC<{
 
       <div className="absolute top-0 left-0 w-full h-1 bg-lime-400 scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
       
-      <div className="relative z-10 flex flex-col items-center text-center">
+      <div className="relative z-10 flex flex-col h-full items-center text-center">
         {/* Profile Image Container */}
-        <div className="relative mb-6">
-          <div className="w-28 h-28 md:w-32 md:h-32 rounded-3xl overflow-hidden border-2 border-lime-400/30 group-hover:border-lime-400 transition-colors shadow-[0_0_20px_rgba(163,230,53,0.1)]">
+        <div className="relative mb-6 shrink-0">
+          <div className="w-28 h-28 md:w-32 md:h-32 rounded-3xl overflow-hidden border-2 border-lime-400/30 group-hover:border-lime-400 transition-all duration-500 shadow-[0_0_20px_rgba(163,230,53,0.1)]">
             <img 
               src={image} 
               alt={name}
@@ -64,49 +67,67 @@ const CoachCard: React.FC<{
           </div>
         </div>
         
-        <h3 className="text-2xl md:text-3xl font-display font-bold mb-1 text-white group-hover:text-lime-400 transition-colors">{name}</h3>
-        <p className="text-gray-400 text-[10px] md:text-xs font-display font-bold uppercase tracking-[0.3em] mb-6">{title}</p>
-        
-        {offer && (
-          <div className="mb-6 p-3 bg-lime-400/5 border border-lime-400/20 rounded-2xl">
-            <p className="text-[10px] text-lime-400 font-bold uppercase leading-tight tracking-tighter">{offer}</p>
-          </div>
-        )}
-
-        <div className="flex flex-wrap justify-center gap-2 mb-8">
-          {tags.map((tag, i) => (
-            <span key={i} className="text-[8px] md:text-[9px] px-3 py-1 bg-white/5 border border-white/10 text-gray-400 font-bold uppercase tracking-widest rounded-full group-hover:border-lime-400/30 transition-colors">
-              {tag}
-            </span>
-          ))}
+        <div className="mb-4 shrink-0">
+          <h3 className="text-2xl md:text-3xl font-display font-bold mb-1 text-white group-hover:text-lime-400 transition-colors uppercase tracking-tight">{name}</h3>
+          <p className="text-gray-400 text-[10px] md:text-xs font-display font-bold uppercase tracking-[0.3em]">{title}</p>
         </div>
 
-        <a 
-          href={`#enroll`}
-          onClick={() => {
-            window.location.hash = `enroll-${encodeURIComponent(name)}`;
-          }}
-          className="w-full mb-8 py-4 bg-primary text-white font-display font-bold uppercase text-[10px] md:text-xs tracking-widest text-center hover:bg-white hover:text-primary transition-all duration-500 shadow-[0_0_20px_rgba(255,0,0,0.3)] hover:shadow-[0_0_40px_rgba(255,0,0,0.5)] rounded-2xl flex items-center justify-center gap-2 group/book"
-        >
-          Book Personal Training
-          <motion.span
-            animate={{ x: [0, 5, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-          >
-            →
-          </motion.span>
-        </a>
-        
-        <div className="w-full pt-6 border-t border-white/5 flex justify-between items-center">
-          <div className="text-left">
-            <p className="text-[9px] text-gray-500 uppercase font-bold tracking-widest mb-1">Experience</p>
-            <p className="text-base font-bold text-white font-mono">{exp}</p>
+        {quote && (
+          <div className="mb-4 opacity-80 group-hover:opacity-100 transition-opacity">
+            <p className="text-[11px] text-gray-300 italic font-medium leading-relaxed">"{quote}"</p>
           </div>
-          <div className="text-right">
-            <div className="w-12 h-12 bg-lime-400 rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(163,230,53,0.2)] group-hover:shadow-[0_0_30px_rgba(163,230,53,0.4)] transition-all transform group-hover:rotate-12">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3">
-                <path d="M20 6L9 17l-5-5"/>
-              </svg>
+        )}
+        
+        {/* Constant height container for variable text to keep rest of card aligned */}
+        <div className="flex-grow flex flex-col items-center justify-center mb-6">
+          {funFact && (
+            <div className="mb-4 py-2 px-3 bg-zinc-800/50 rounded-xl border border-white/5 w-full">
+              <p className="text-[9px] text-lime-400 uppercase font-black tracking-widest mb-1">Fun Fact</p>
+              <p className="text-[10px] text-gray-400">{funFact}</p>
+            </div>
+          )}
+
+          {offer && (
+            <div className="mb-4 p-4 bg-lime-400/5 border border-lime-400/10 rounded-2xl max-w-[240px]">
+              <p className="text-[10px] text-lime-400/90 font-bold uppercase leading-relaxed tracking-tight">{offer}</p>
+            </div>
+          )}
+
+          <div className="flex flex-wrap justify-center gap-2">
+            {tags.map((tag, i) => (
+              <span key={i} className="text-[8px] md:text-[9px] px-3 py-1 bg-white/5 border border-white/10 text-gray-400 font-bold uppercase tracking-widest rounded-full group-hover:border-lime-400/30 transition-colors">
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom actions pinned to the card base */}
+        <div className="mt-auto w-full">
+          <a 
+            href={`#booking-calendar`}
+            className="w-full mb-8 py-4 bg-primary text-white font-display font-bold uppercase text-[10px] md:text-xs tracking-widest text-center hover:bg-white hover:text-primary transition-all duration-500 shadow-[0_0_20px_rgba(255,0,0,0.2)] hover:shadow-[0_0_40px_rgba(255,0,0,0.4)] rounded-2xl flex items-center justify-center gap-2 group/book"
+          >
+            Book Schedule
+            <motion.span
+              animate={{ x: [0, 5, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            >
+              →
+            </motion.span>
+          </a>
+          
+          <div className="w-full pt-6 border-t border-white/10 flex justify-between items-center">
+            <div className="text-left">
+              <p className="text-[9px] text-gray-500 uppercase font-bold tracking-widest mb-1">Experience</p>
+              <p className="text-xl font-black text-white font-display tracking-tight">{exp}</p>
+            </div>
+            <div className="text-right">
+              <div className="w-12 h-12 bg-lime-400 rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(163,230,53,0.15)] group-hover:shadow-[0_0_30px_rgba(163,230,53,0.3)] transition-all transform group-hover:scale-110 group-hover:rotate-12">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3.5">
+                  <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
             </div>
           </div>
         </div>
@@ -127,7 +148,9 @@ export const Coaches: React.FC = () => {
       exp: '8+ Years',
       gender: 'Male',
       image: 'https://scontent.fmnl17-5.fna.fbcdn.net/v/t39.30808-6/616167005_1357308569742292_2269808994999264131_n.jpg?_nc_cat=110&ccb=1-7&_nc_sid=13d280&_nc_ohc=5S4gjwcixlEQ7kNvwHfJFnd&_nc_oc=AdopfDTcb35F73n5OxQ-Z63TyS-VepWaWe4lnAV70OhgRuXUxdUqtBS7lCyKoeYZPfs&_nc_zt=23&_nc_ht=scontent.fmnl17-5.fna&_nc_gid=aF8upCJtuXBPADB7ft49yw&_nc_ss=7b2a8&oh=00_Af0r1DTFW2DVQhrQxOzFhRJzct-RSK54nF59uduXB8CwxA&oe=69F924A2',
-      offer: 'Get 1 Day Free Trial • Avail 30 sessions and get Free 1 Month Membership'
+      offer: 'Get 1 Day Free Trial • Avail 30 sessions and get Free 1 Month Membership',
+      quote: 'Strength is not just physical; it\'s the will to never give up on yourself.',
+      funFact: 'Can do 50 pull-ups in a single set!'
     },
     {
       name: 'Coach Joeffrey',
@@ -136,7 +159,9 @@ export const Coaches: React.FC = () => {
       exp: '7+ Years',
       gender: 'Male',
       image: 'https://scontent.fmnl17-5.fna.fbcdn.net/v/t39.30808-6/616584603_1357308566408959_7429159526451463547_n.jpg?_nc_cat=110&ccb=1-7&_nc_sid=13d280&_nc_ohc=ryJSzZu_I7QQ7kNvwGi4Frx&_nc_oc=AdpV7X7U3aUBWFbBa9kPAGOzCfI7_HXHq9oqya3gBCptdHhdFgw3NDvWd6_9l3fVYFw&_nc_zt=23&_nc_ht=scontent.fmnl17-5.fna&_nc_gid=jTJON7wmXoSMLJdCGDKzgQ&_nc_ss=7b2a8&oh=00_Af30H_Q4bQVkwg0DBTbceR8Fy9cFJMwRiSWLxFKV2rnDEg&oe=69F9412F',
-      offer: 'Get 1 Day Free Trial • Avail 30 sessions and get Free 1 Month Membership'
+      offer: 'Get 1 Day Free Trial • Avail 30 sessions and get Free 1 Month Membership',
+      quote: 'Consistency beats intensity every single time.',
+      funFact: 'Loves ultra-marathons and early morning runs.'
     },
     {
       name: 'Coach Teresa',
@@ -145,7 +170,9 @@ export const Coaches: React.FC = () => {
       exp: '6+ Years',
       gender: 'Female',
       image: 'https://scontent.fmnl17-1.fna.fbcdn.net/v/t39.30808-6/616839272_1357308573075625_7631671944602560753_n.jpg?_nc_cat=101&ccb=1-7&_nc_sid=13d280&_nc_ohc=nEDpR1rOozYQ7kNvwHF2Qe1&_nc_oc=AdoykXAXB77zNh8vZydLuZT7OQpZYhX9ruywu1yXaNwHJaXtkUw9cUhGS1r4xf0Bvjg&_nc_zt=23&_nc_ht=scontent.fmnl17-1.fna&_nc_gid=yNlU_GRYMtZA1Ebu43Prfw&_nc_ss=7b2a8&oh=00_Af0sRua79TUijzYEpZxTWEsOJIY92z-SPTkh4srhU1vTSA&oe=69F919FB',
-      offer: 'Get 1 Day Free Trial • Avail 30 sessions and get Free 1 Month Membership'
+      offer: 'Get 1 Day Free Trial • Avail 30 sessions and get Free 1 Month Membership',
+      quote: 'Wellness is a journey of balance and self-love.',
+      funFact: 'Practices yoga for over 10 years and loves herbal teas.'
     },
     {
       name: 'Coach Alvin',
@@ -154,16 +181,18 @@ export const Coaches: React.FC = () => {
       exp: '9+ Years',
       gender: 'Male',
       image: 'https://scontent.fmnl17-3.fna.fbcdn.net/v/t39.30808-6/616803666_1357308656408950_346872988368576245_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=13d280&_nc_ohc=CpGB_qsMKDUQ7kNvwEgxQVk&_nc_oc=Adp_S6dKqZ99Fj4aZt1jOeYtdmZUPt2V1zg19i0pVSt01SsvP1qjdAP6OxTUkB0ptao&_nc_zt=23&_nc_ht=scontent.fmnl17-3.fna&_nc_gid=1omMXkGyJY2WQRFaQDqXOQ&_nc_ss=7b2a8&oh=00_Af1JC619NxZ6m_KpRldVFLVtruaR4Kzf4tbR6vgL6VX0cQ&oe=69F91E93',
-      offer: 'Get 1 Day Free Trial • Avail 30 sessions and get Free 1 Month Membership'
+      offer: 'Get 1 Day Free Trial • Avail 30 sessions and get Free 1 Month Membership',
+      quote: 'The only weight that matters is the one you haven\'t lifted yet.',
+      funFact: 'National powerlifting record holder in his category.'
     }
   ];
 
   return (
-    <section id="coaches" className="py-24 bg-background relative overflow-hidden">
-      {/* Background Wallpaper */}
+    <section id="coaches" className="py-24 bg-zinc-950 relative overflow-hidden">
+      {/* Background Wallpaper with Warm Tint */}
       <motion.div 
         style={{ y: yParallax }}
-        className="absolute inset-0 z-0 opacity-20 grayscale brightness-50"
+        className="absolute inset-0 z-0 opacity-10 grayscale brightness-[0.3]"
       >
         <img 
           src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070" 
@@ -172,7 +201,8 @@ export const Coaches: React.FC = () => {
           referrerPolicy="no-referrer"
         />
       </motion.div>
-      <div className="absolute inset-0 cyber-grid opacity-10 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-primary/5 pointer-events-none" />
+      <div className="absolute inset-0 cyber-grid opacity-5 pointer-events-none" />
 
       <div className="container mx-auto px-6 relative z-10">
         <div className="text-center mb-16">

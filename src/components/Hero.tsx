@@ -164,7 +164,7 @@ export const Hero: React.FC = () => {
   return (
     <section id="hero" className="relative h-screen w-full overflow-hidden bg-background flex items-center justify-center">
       {/* Dynamic Background Video */}
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 bg-neutral-900">
         <video 
           ref={videoRef}
           autoPlay 
@@ -172,24 +172,26 @@ export const Hero: React.FC = () => {
           loop 
           playsInline
           preload="auto"
+          crossOrigin="anonymous"
           onTimeUpdate={(e) => {
             const video = e.currentTarget;
             if (video.currentTime >= 30) {
               video.currentTime = 0;
             }
           }}
-          className="w-full h-full object-cover scale-105"
+          className="w-full h-full object-cover"
         >
           <source 
-            src="https://github.com/janaryalfaro3-lab/north-fitness-camp/blob/main/video.mp4.mp4?raw=true" 
+            src="https://raw.githubusercontent.com/janaryalfaro3-lab/north-fitness-camp/main/video.mp4.mp4" 
             type="video/mp4" 
           />
           Your browser does not support the video tag.
         </video>
-        {/* Cinematic Overlays */}
-        <div className="absolute inset-0 bg-black/40" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/60" />
-        <div className="absolute inset-0 bg-primary/5 animate-pulse-slow" />
+        {/* Cinematic Overlays - Enhanced for a warmer, more inviting environment */}
+        <div className="absolute inset-0 bg-black/20" />
+        <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 via-transparent to-orange-500/5 mix-blend-overlay" />
+        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-zinc-950/60" />
+        <div className="absolute inset-0 bg-primary/5 animate-pulse-slow mix-blend-color-dodge pointer-events-none" />
       </div>
 
       {/* Three.js Particle Layer */}
