@@ -1,0 +1,117 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 0. GLOBAL SAFETY NET
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ===============================================================
+    // GLOBAL HELPERS
+    // ===============================================================
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      // Hardcoded admin email for North Fitness Camp
+      return isEmailVerified() && request.auth.token.email == "thefitnesscamp23@gmail.com";
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.size() <= 256 && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // ===============================================================
+    // ENTITY VALIDATORS (Anti-Update-Gap)
+    // ===============================================================
+
+    function isValidUser(data) {
+      let requiredFields = ['uid', 'email', 'role', 'createdAt'];
+      return data.keys().hasAll(requiredFields) &&
+             data.keys().size() >= 4 && data.keys().size() <= 10 &&
+             data.uid == request.auth.uid &&
+             isValidEmail(data.email) &&
+             data.role in ['user', 'admin'] &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidSubscriber(data) {
+      let requiredFields = ['email', 'subscribedAt', 'status'];
+      return data.keys().hasAll(requiredFields) &&
+             data.keys().size() == 3 &&
+             isValidEmail(data.email) &&
+             data.subscribedAt is timestamp &&
+             data.status in ['active', 'unsubscribed'];
+    }
+
+    function isValidEnrollment(data) {
+      let requiredFields = ['fullName', 'mobileNumber', 'email', 'program', 'schedule', 'submittedAt'];
+      return data.keys().hasAll(requiredFields) &&
+             data.keys().size() >= 6 && data.keys().size() <= 10 &&
+             data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 100 &&
+             data.mobileNumber is string && data.mobileNumber.size() >= 10 && data.mobileNumber.size() <= 20 &&
+             isValidEmail(data.email) &&
+             data.submittedAt is timestamp;
+    }
+
+    // ===============================================================
+    // COLLECTION RULES
+    // ===============================================================
+
+    // Path: /users/{userId}
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow list: if isAdmin();
+      
+      allow create: if isValidId(userId) && isSignedIn() && request.auth.uid == userId && 
+                    isValidUser(incoming()) && incoming().createdAt == request.time;
+      
+      allow update: if isValidId(userId) && (
+        isSignedIn() && (
+          isAdmin() || (
+            request.auth.uid == userId && 
+            isValidUser(incoming()) &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL'])
+          )
+        )
+      );
+
+      allow delete: if isValidId(userId) && isAdmin();
+    }
+
+    // Path: /subscribers/{email}
+    match /subscribers/{email} {
+      allow get, list: if isAdmin();
+      allow create: if isValidSubscriber(incoming()) && incoming().email == email && incoming().subscribedAt == request.time;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Path: /enrollments/{enrollmentId}
+    match /enrollments/{enrollmentId} {
+      allow get, list: if isAdmin();
+      allow create: if isValidId(enrollmentId) && isValidEnrollment(incoming()) && incoming().submittedAt == request.time;
+      allow update: if isValidId(enrollmentId) && isAdmin();
+      allow delete: if isValidId(enrollmentId) && isAdmin();
+    }
+  }
+}
