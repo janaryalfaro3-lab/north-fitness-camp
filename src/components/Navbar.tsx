@@ -1,16 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, X, LogIn, User as UserIcon, LogOut, Loader2 } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { Logo } from './Logo';
-import { db, auth, handleFirestoreError, OperationType } from '../firebase';
-import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 export const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -18,64 +13,10 @@ export const Navbar: React.FC = () => {
     };
     window.addEventListener('scroll', handleScroll);
 
-    const unsubscribe = onAuthStateChanged(auth, async (u) => {
-      setUser(u);
-      setLoading(false);
-      
-      if (u) {
-        // Handle user profile creation
-        try {
-          const userDoc = await getDoc(doc(db, 'users', u.uid));
-          if (!userDoc.exists()) {
-            const userData = {
-              uid: u.uid,
-              email: u.email,
-              displayName: u.displayName,
-              photoURL: u.photoURL,
-              role: 'user',
-              createdAt: serverTimestamp()
-            };
-            await setDoc(doc(db, 'users', u.uid), userData);
-
-            // Notify admin
-            try {
-              await fetch('/api/notify-signup', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(userData)
-              });
-            } catch (err) {
-              console.warn("Sign-up notification failed");
-            }
-          }
-        } catch (error) {
-          handleFirestoreError(error, OperationType.GET, `users/${u.uid}`);
-        }
-      }
-    });
-
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      unsubscribe();
     };
   }, []);
-
-  const handleLogin = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error('Login error:', error);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
 
   const navLinks = [
     { name: 'About', href: '#about' },
@@ -111,39 +52,6 @@ export const Navbar: React.FC = () => {
           ))}
           
           <div className="flex items-center gap-4 pl-4 border-l border-white/10">
-            {loading ? (
-              <Loader2 className="text-primary animate-spin" size={20} />
-            ) : user ? (
-              <div className="flex items-center gap-4">
-                <div className="relative group">
-                  <img 
-                    src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}`} 
-                    className="w-10 h-10 rounded-xl border border-white/10 p-0.5 group-hover:border-primary transition-colors cursor-pointer"
-                    alt="Profile"
-                  />
-                  <div className="absolute top-full right-0 mt-3 hidden group-hover:block w-48 pt-2">
-                    <div className="bg-secondary/95 backdrop-blur-xl border border-white/10 p-4 rounded-2xl shadow-2xl">
-                      <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Signed in as</p>
-                      <p className="text-white text-xs font-bold truncate mb-3">{user.displayName}</p>
-                      <button 
-                        onClick={handleLogout}
-                        className="w-full py-2 bg-white/5 hover:bg-primary/20 text-white/70 hover:text-primary rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2"
-                      >
-                        <LogOut size={14} /> Sign Out
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <button 
-                onClick={handleLogin}
-                className="flex items-center gap-2 text-[10px] font-display font-bold uppercase tracking-[0.3em] text-white hover:text-primary transition-colors group"
-              >
-                <LogIn size={18} className="group-hover:scale-110 transition-transform" /> Sign In
-              </button>
-            )}
-
             <a 
               href="#enroll" 
               className="px-8 py-3 bg-primary text-white font-display font-bold uppercase text-xs tracking-widest hover:bg-white hover:text-primary transition-all duration-500 shadow-[0_0_20px_rgba(255,0,0,0.3)] hover:shadow-[0_0_35px_rgba(255,0,0,0.5)] rounded-none relative group overflow-hidden"
@@ -156,13 +64,6 @@ export const Navbar: React.FC = () => {
 
         {/* Mobile Toggle */}
         <div className="flex lg:hidden items-center gap-4">
-          {!loading && user && (
-            <img 
-              src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}`} 
-              className="w-8 h-8 rounded-lg border border-white/10"
-              alt="Profile"
-            />
-          )}
           <button 
             className="text-white p-2 bg-white/5 rounded-lg border border-white/10"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -204,21 +105,6 @@ export const Navbar: React.FC = () => {
               </div>
 
               <div className="p-6 bg-secondary/50 border-t border-white/5 flex flex-col gap-4">
-                {user ? (
-                  <button 
-                    onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
-                    className="w-full py-4 bg-white/5 text-white/50 font-display font-bold uppercase tracking-widest flex items-center justify-center gap-3"
-                  >
-                    <LogOut size={20} /> Sign Out
-                  </button>
-                ) : (
-                  <button 
-                    onClick={() => { handleLogin(); setIsMobileMenuOpen(false); }}
-                    className="w-full py-4 bg-white/10 text-white font-display font-bold uppercase tracking-widest flex items-center justify-center gap-3"
-                  >
-                    <LogIn size={20} /> Sign In
-                  </button>
-                )}
                 <a 
                   href="#enroll" 
                   className="w-full py-5 bg-primary text-white font-display font-bold uppercase text-center tracking-widest shadow-[0_0_20px_rgba(255,0,0,0.3)]"

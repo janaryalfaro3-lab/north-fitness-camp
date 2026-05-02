@@ -52,6 +52,22 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["uid", "email", "role"]
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "A personal training session booking.",
+      "type": "object",
+      "properties": {
+        "fullName": { "type": "string" },
+        "mobileNumber": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "timeSlot": { "type": "string" },
+        "coachId": { "type": "string" },
+        "coachName": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["fullName", "mobileNumber", "date", "timeSlot", "coachId", "status", "createdAt"]
     }
   },
   "firestore": {
@@ -66,6 +82,10 @@
     "/enrollments/{enrollmentId}": {
       "schema": "Enrollment",
       "description": "Collection of program enrollment applications."
+    },
+    "/bookings/{bookingId}": {
+      "schema": "Booking",
+      "description": "Collection of session bookings."
     }
   }
 }

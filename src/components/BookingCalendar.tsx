@@ -11,13 +11,14 @@ import {
   isSameMonth, 
   isSameDay, 
   addDays, 
-  eachDayOfInterval,
   isBefore,
   startOfToday
 } from 'date-fns';
-import { ChevronLeft, ChevronRight, Clock, User, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, User, CheckCircle2, Loader2, Phone, User as UserIcon } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { db, handleFirestoreError, OperationType } from '../firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -42,6 +43,11 @@ export const BookingCalendar: React.FC = () => {
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [selectedCoach, setSelectedCoach] = useState(coaches[0]);
   const [isBooked, setIsBooked] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [contactData, setContactData] = useState({
+    fullName: '',
+    mobileNumber: ''
+  });
 
   const today = startOfToday();
 
@@ -132,10 +138,33 @@ export const BookingCalendar: React.FC = () => {
     return <div className="rounded-2xl overflow-hidden border border-white/10 bg-black/40">{rows}</div>;
   };
 
-  const handleBooking = () => {
-    if (selectedSlot) {
-      setIsBooked(true);
-      setTimeout(() => setIsBooked(false), 3000);
+  const handleBooking = async () => {
+    if (selectedSlot && contactData.fullName && contactData.mobileNumber) {
+      setIsLoading(true);
+      try {
+        const bookingData = {
+          fullName: contactData.fullName,
+          mobileNumber: contactData.mobileNumber,
+          date: format(selectedDate, 'yyyy-MM-dd'),
+          timeSlot: selectedSlot,
+          coachId: selectedCoach.id,
+          coachName: selectedCoach.name,
+          status: 'pending',
+          createdAt: serverTimestamp()
+        };
+
+        await addDoc(collection(db, 'bookings'), bookingData);
+
+        setIsBooked(true);
+        setContactData({ fullName: '', mobileNumber: '' });
+        setSelectedSlot(null);
+        
+        setTimeout(() => setIsBooked(false), 5000);
+      } catch (error) {
+        handleFirestoreError(error, OperationType.WRITE, 'bookings');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -207,19 +236,44 @@ export const BookingCalendar: React.FC = () => {
                 ))}
               </div>
 
+              <div className="mt-8 space-y-4">
+                <div className="relative">
+                  <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={14} />
+                  <input
+                    type="text"
+                    placeholder="Full Name"
+                    value={contactData.fullName}
+                    onChange={(e) => setContactData(prev => ({ ...prev, fullName: e.target.value }))}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-[10px] text-white focus:outline-none focus:border-primary transition-all placeholder:text-gray-600 font-bold uppercase tracking-widest"
+                  />
+                </div>
+                <div className="relative">
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={14} />
+                  <input
+                    type="tel"
+                    placeholder="Mobile Number"
+                    value={contactData.mobileNumber}
+                    onChange={(e) => setContactData(prev => ({ ...prev, mobileNumber: e.target.value }))}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-[10px] text-white focus:outline-none focus:border-primary transition-all placeholder:text-gray-600 font-bold uppercase tracking-widest"
+                  />
+                </div>
+              </div>
+
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleBooking}
-                disabled={!selectedSlot || isBooked}
+                disabled={!selectedSlot || !contactData.fullName || !contactData.mobileNumber || isBooked || isLoading}
                 className={cn(
-                  "w-full mt-8 py-4 rounded-2xl font-display font-black uppercase text-xs tracking-[0.2em] transition-all duration-500 flex items-center justify-center gap-2",
+                  "w-full mt-4 py-4 rounded-2xl font-display font-black uppercase text-xs tracking-[0.2em] transition-all duration-500 flex items-center justify-center gap-2",
                   isBooked 
                     ? "bg-lime-400 text-black" 
                     : "bg-primary text-white shadow-[0_0_30px_rgba(255,0,0,0.2)] hover:shadow-[0_0_50px_rgba(255,0,0,0.4)] disabled:opacity-50 disabled:grayscale cursor-pointer"
                 )}
               >
-                {isBooked ? (
+                {isLoading ? (
+                  <Loader2 className="animate-spin" size={18} />
+                ) : isBooked ? (
                   <>
                     <CheckCircle2 size={18} />
                     Booking Confirmed!

@@ -222,7 +222,14 @@ export const Schedule: React.FC = () => {
                 </div>
               </div>
               
-              <button className="w-full py-4 bg-primary text-white font-display font-bold uppercase tracking-widest hover:bg-gray-900 transition-all rounded-xl shadow-lg shadow-primary/20 mb-4">
+              <button 
+                onClick={() => {
+                  setSelectedClass(null);
+                  const el = document.getElementById('booking-calendar');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="w-full py-4 bg-primary text-white font-display font-bold uppercase tracking-widest hover:bg-gray-900 transition-all rounded-xl shadow-lg shadow-primary/20 mb-4"
+              >
                 Book This Slot
               </button>
 

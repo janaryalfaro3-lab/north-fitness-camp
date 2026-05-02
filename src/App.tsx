@@ -19,7 +19,6 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { Amenities } from './components/Amenities';
 import { ChatBot } from './components/ChatBot';
 import { BookingCalendar } from './components/BookingCalendar';
-import { SocialFeed } from './components/SocialFeed';
 
 export default function App() {
   return (
@@ -40,7 +39,6 @@ export default function App() {
           <BookingCalendar />
           <Schedule />
           <Testimonials />
-          <SocialFeed />
           <EnrollmentForm />
           <Newsletter />
         </main>

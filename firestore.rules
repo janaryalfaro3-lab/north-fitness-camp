@@ -74,6 +74,18 @@ service cloud.firestore {
              data.submittedAt is timestamp;
     }
 
+    function isValidBooking(data) {
+      let requiredFields = ['fullName', 'mobileNumber', 'date', 'timeSlot', 'coachId', 'coachName', 'status', 'createdAt'];
+      return data.keys().hasAll(requiredFields) &&
+             data.keys().size() == 8 &&
+             data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 100 &&
+             data.mobileNumber is string && data.mobileNumber.size() >= 10 && data.mobileNumber.size() <= 20 &&
+             data.date is string && data.date.size() == 10 &&
+             data.timeSlot is string &&
+             data.status in ['pending', 'confirmed', 'cancelled'] &&
+             data.createdAt is timestamp;
+    }
+
     // ===============================================================
     // COLLECTION RULES
     // ===============================================================
@@ -113,6 +125,13 @@ service cloud.firestore {
       allow create: if isValidId(enrollmentId) && isValidEnrollment(incoming()) && incoming().submittedAt == request.time;
       allow update: if isValidId(enrollmentId) && isAdmin();
       allow delete: if isValidId(enrollmentId) && isAdmin();
+    }
+
+    // Path: /bookings/{bookingId}
+    match /bookings/{bookingId} {
+      allow get, list: if isAdmin();
+      allow create: if isValidId(bookingId) && isValidBooking(incoming()) && incoming().createdAt == request.time;
+      allow update, delete: if isValidId(bookingId) && isAdmin();
     }
   }
 }
