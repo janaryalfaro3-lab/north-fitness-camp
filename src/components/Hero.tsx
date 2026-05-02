@@ -7,14 +7,50 @@ export const Hero: React.FC = () => {
   const [mousePos, setMousePos] = React.useState({ x: 0, y: 0 });
   const mouse = useRef({ x: 0, y: 0 });
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoLoaded, setVideoLoaded] = React.useState(false);
+  const [videoError, setVideoError] = React.useState(false);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      // Re-trigger play if user returns to tab and video is paused
+      if (document.visibilityState === 'visible' && videoRef.current && videoRef.current.paused) {
+        videoRef.current.play().catch(() => {});
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
 
   useEffect(() => {
     if (videoRef.current) {
-      videoRef.current.play().catch(() => {
-        // Silent catch for autoplay blocking
+      videoRef.current.play().catch((err) => {
+        console.log("Autoplay issue:", err);
       });
     }
   }, []);
+
+  // Extra check to ensure video is actually playing
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (videoRef.current && videoRef.current.readyState >= 3 && !videoRef.current.paused) {
+        setVideoLoaded(true);
+        clearInterval(interval);
+      }
+    }, 1000);
+    
+    // Safety timeout: if it hasn't loaded in 8 seconds, flag it
+    const timeout = setTimeout(() => {
+      if (!videoLoaded) {
+        console.warn("Video didn't start playing within 8s.");
+      }
+    }, 8000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [videoLoaded]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -162,12 +198,12 @@ export const Hero: React.FC = () => {
   }, []);
 
   return (
-    <section id="hero" className="relative h-screen w-full overflow-hidden bg-background flex items-center justify-center">
-      {/* Dynamic Background Video */}
+    <section id="hero" className="relative h-screen w-full overflow-hidden bg-zinc-950 flex items-center justify-center">
+      {/* Dynamic Background Video & Fallback */}
       <div 
         className="absolute inset-0 z-0 bg-zinc-950 pointer-events-none"
         style={{
-          backgroundImage: "url('https://images.unsplash.com/photo-1540497077202-7c8a3999166f?q=80&w=2070')",
+          backgroundImage: "url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070')",
           backgroundSize: 'cover',
           backgroundPosition: 'center'
         }}
@@ -179,46 +215,51 @@ export const Hero: React.FC = () => {
           loop 
           playsInline
           preload="auto"
-          className="w-full h-full object-cover opacity-80"
-          onError={(e) => {
-            console.error("Video loading error. Fallback image is active.");
-            const video = e.currentTarget;
-            video.style.display = 'none';
+          className={`w-full h-full object-cover transition-opacity duration-1000 ${videoLoaded ? 'opacity-80' : 'opacity-0'}`}
+          onLoadedData={() => setVideoLoaded(true)}
+          onCanPlay={() => setVideoLoaded(true)}
+          onPlay={() => setVideoLoaded(true)}
+          onWaiting={() => {
+            // If stalled, try to kickstart it
+            videoRef.current?.play().catch(() => {});
+          }}
+          onStalled={() => {
+            console.warn("Video stalled, attempting resume...");
+            videoRef.current?.load();
+            videoRef.current?.play().catch(() => {});
+          }}
+          onError={() => {
+            console.error("Critical video error. Falling back to static image.");
+            setVideoError(true);
+            setVideoLoaded(false);
           }}
         >
-          {/* Verified URL that returned a large response */}
-          <source 
-            src="https://raw.githubusercontent.com/janaryalfaro3-lab/north-fitness-camp/main/video.mp4.mp4" 
-            type="video/mp4" 
-          />
-          <source 
-            src="https://raw.githubusercontent.com/janaryalfaro3-lab/north-fitness-camp/master/video.mp4.mp4" 
-            type="video/mp4" 
-          />
-          {/* CDN Versions of the verified URL */}
-          <source 
-            src="https://cdn.jsdelivr.net/gh/janaryalfaro3-lab/north-fitness-camp@main/video.mp4.mp4" 
-            type="video/mp4" 
-          />
-          {/* Other variations just in case */}
-          <source 
-            src="https://raw.githubusercontent.com/janaryalfaro3-lab/north-fitness-camp/main/video.mp4" 
-            type="video/mp4" 
-          />
-          <source 
-            src="https://github.com/janaryalfaro3-lab/north-fitness-camp/blob/main/video.mp4?raw=true" 
-            type="video/mp4" 
-          />
-          <source 
-            src="https://github.com/janaryalfaro3-lab/north-fitness-camp/blob/main/video.mp4.mp4?raw=true" 
-            type="video/mp4" 
-          />
+          {/* Main high-performance CDN links */}
+          <source src="https://cdn.jsdelivr.net/gh/janaryalfaro3-lab/north-fitness-camp@main/video.mp4.mp4" type="video/mp4" />
+          <source src="https://raw.githubusercontent.com/janaryalfaro3-lab/north-fitness-camp/main/video.mp4.mp4" type="video/mp4" />
+          
+          {/* GitHub Redirects as failover */}
+          <source src="https://github.com/janaryalfaro3-lab/north-fitness-camp/blob/main/video.mp4.mp4?raw=true" type="video/mp4" />
+          <source src="https://raw.githubusercontent.com/janaryalfaro3-lab/north-fitness-camp/master/video.mp4.mp4" type="video/mp4" />
+          
+          {/* Single extension fallbacks if double was a mistake */}
+          <source src="https://cdn.jsdelivr.net/gh/janaryalfaro3-lab/north-fitness-camp@main/video.mp4" type="video/mp4" />
+          <source src="https://raw.githubusercontent.com/janaryalfaro3-lab/north-fitness-camp/main/video.mp4" type="video/mp4" />
+          
           Your browser does not support the video tag.
         </video>
+
+        {/* Subtle fallback indicator for debugging/info if video fails after timeout */}
+        {(videoError || !videoLoaded) && (
+          <div className="absolute bottom-10 right-10 text-white/20 text-[10px] font-mono uppercase tracking-widest z-10 transition-opacity duration-1000">
+            {videoError ? "Streaming offline • Static overlay active" : "Establishing connection..."}
+          </div>
+        )}
+
         {/* Cinematic Overlays - Balanced for visibility and atmosphere */}
-        <div className="absolute inset-0 bg-black/15" />
-        <div className="absolute inset-0 bg-gradient-to-tr from-primary/15 via-transparent to-orange-500/10 mix-blend-overlay" />
-        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-zinc-950/50" />
+        <div className="absolute inset-0 bg-black/20" />
+        <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-transparent to-orange-500/10 mix-blend-overlay" />
+        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-zinc-950/60" />
         <div className="absolute inset-0 bg-primary/5 animate-pulse-slow mix-blend-color-dodge" />
       </div>
 
