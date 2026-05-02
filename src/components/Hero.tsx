@@ -164,7 +164,14 @@ export const Hero: React.FC = () => {
   return (
     <section id="hero" className="relative h-screen w-full overflow-hidden bg-background flex items-center justify-center">
       {/* Dynamic Background Video */}
-      <div className="absolute inset-0 z-0 bg-neutral-900">
+      <div 
+        className="absolute inset-0 z-0 bg-zinc-950 pointer-events-none"
+        style={{
+          backgroundImage: "url('https://images.unsplash.com/photo-1540497077202-7c8a3999166f?q=80&w=2070')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}
+      >
         <video 
           ref={videoRef}
           autoPlay 
@@ -172,33 +179,54 @@ export const Hero: React.FC = () => {
           loop 
           playsInline
           preload="auto"
-          crossOrigin="anonymous"
-          onTimeUpdate={(e) => {
+          className="w-full h-full object-cover opacity-80"
+          onError={(e) => {
+            console.error("Video loading error. Fallback image is active.");
             const video = e.currentTarget;
-            if (video.currentTime >= 30) {
-              video.currentTime = 0;
-            }
+            video.style.display = 'none';
           }}
-          className="w-full h-full object-cover"
         >
+          {/* Verified URL that returned a large response */}
           <source 
             src="https://raw.githubusercontent.com/janaryalfaro3-lab/north-fitness-camp/main/video.mp4.mp4" 
             type="video/mp4" 
           />
+          <source 
+            src="https://raw.githubusercontent.com/janaryalfaro3-lab/north-fitness-camp/master/video.mp4.mp4" 
+            type="video/mp4" 
+          />
+          {/* CDN Versions of the verified URL */}
+          <source 
+            src="https://cdn.jsdelivr.net/gh/janaryalfaro3-lab/north-fitness-camp@main/video.mp4.mp4" 
+            type="video/mp4" 
+          />
+          {/* Other variations just in case */}
+          <source 
+            src="https://raw.githubusercontent.com/janaryalfaro3-lab/north-fitness-camp/main/video.mp4" 
+            type="video/mp4" 
+          />
+          <source 
+            src="https://github.com/janaryalfaro3-lab/north-fitness-camp/blob/main/video.mp4?raw=true" 
+            type="video/mp4" 
+          />
+          <source 
+            src="https://github.com/janaryalfaro3-lab/north-fitness-camp/blob/main/video.mp4.mp4?raw=true" 
+            type="video/mp4" 
+          />
           Your browser does not support the video tag.
         </video>
-        {/* Cinematic Overlays - Enhanced for a warmer, more inviting environment */}
-        <div className="absolute inset-0 bg-black/20" />
-        <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 via-transparent to-orange-500/5 mix-blend-overlay" />
-        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-zinc-950/60" />
-        <div className="absolute inset-0 bg-primary/5 animate-pulse-slow mix-blend-color-dodge pointer-events-none" />
+        {/* Cinematic Overlays - Balanced for visibility and atmosphere */}
+        <div className="absolute inset-0 bg-black/15" />
+        <div className="absolute inset-0 bg-gradient-to-tr from-primary/15 via-transparent to-orange-500/10 mix-blend-overlay" />
+        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-zinc-950/50" />
+        <div className="absolute inset-0 bg-primary/5 animate-pulse-slow mix-blend-color-dodge" />
       </div>
 
       {/* Three.js Particle Layer */}
-      <div ref={containerRef} className="absolute inset-0 z-10 opacity-40 pointer-events-none" />
+      <div ref={containerRef} className="absolute inset-0 z-10 opacity-20 pointer-events-none" />
       
-      {/* Cyberpunk Grid */}
-      <div className="absolute inset-0 cyber-grid opacity-20 pointer-events-none z-0" />
+      {/* Cyberpunk Grid - Placed behind overlays for depth */}
+      <div className="absolute inset-0 cyber-grid opacity-5 pointer-events-none z-[1]" />
       <div className="absolute inset-0 scanline opacity-5 pointer-events-none z-20" />
 
       <div className="relative z-30 container mx-auto px-6 text-center">
