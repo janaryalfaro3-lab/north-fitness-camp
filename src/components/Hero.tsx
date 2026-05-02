@@ -201,11 +201,12 @@ export const Hero: React.FC = () => {
     <section id="hero" className="relative h-screen w-full overflow-hidden bg-zinc-950 flex items-center justify-center">
       {/* Dynamic Background Video & Fallback */}
       <div 
-        className="absolute inset-0 z-0 bg-zinc-950 pointer-events-none"
+        className="absolute inset-0 z-0 bg-zinc-950 pointer-events-none flex items-center justify-center"
         style={{
           backgroundImage: "url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070')",
           backgroundSize: 'cover',
-          backgroundPosition: 'center'
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
         }}
       >
         <video 
@@ -215,12 +216,12 @@ export const Hero: React.FC = () => {
           loop 
           playsInline
           preload="auto"
-          className={`w-full h-full object-cover transition-opacity duration-1000 ${videoLoaded ? 'opacity-80' : 'opacity-0'}`}
+          poster="https://images.unsplash.com/photo-1540497077202-7c8a3999166f?q=80&w=2070"
+          className={`w-full h-full object-contain md:object-cover transition-opacity duration-1000 ${videoLoaded ? 'opacity-80' : 'opacity-0'}`}
           onLoadedData={() => setVideoLoaded(true)}
           onCanPlay={() => setVideoLoaded(true)}
           onPlay={() => setVideoLoaded(true)}
           onWaiting={() => {
-            // If stalled, try to kickstart it
             videoRef.current?.play().catch(() => {});
           }}
           onStalled={() => {
@@ -256,11 +257,11 @@ export const Hero: React.FC = () => {
           </div>
         )}
 
-        {/* Cinematic Overlays - Balanced for visibility and atmosphere */}
-        <div className="absolute inset-0 bg-black/20" />
-        <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-transparent to-orange-500/10 mix-blend-overlay" />
-        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-zinc-950/60" />
-        <div className="absolute inset-0 bg-primary/5 animate-pulse-slow mix-blend-color-dodge" />
+        {/* Cinematic Overlays - Optimized to show "whole" video clearly */}
+        <div className="absolute inset-0 bg-black/10" />
+        <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 via-transparent to-orange-500/5 mix-blend-overlay" />
+        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-zinc-950/40" />
+        <div className="absolute inset-0 bg-primary/2 animate-pulse-slow mix-blend-color-dodge" />
       </div>
 
       {/* Three.js Particle Layer */}
