@@ -1,7 +1,10 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'motion/react';
+import { db, auth, handleFirestoreError, OperationType } from '../firebase';
+import { collection, getDocs, setDoc, doc, query, orderBy, onSnapshot } from 'firebase/firestore';
 
-const CoachCard: React.FC<{ 
+interface CoachData {
+  id: string;
   name: string; 
   title: string; 
   tags: string[]; 
@@ -11,9 +14,26 @@ const CoachCard: React.FC<{
   offer?: string;
   quote?: string;
   funFact?: string;
-}> = ({ name, title, tags, exp, gender, image, offer, quote, funFact }) => {
+  order: number;
+}
+
+const CoachCard: React.FC<CoachData> = ({ name, title, tags, exp, gender, image, offer, quote, funFact }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [rotate, setRotate] = useState({ x: 0, y: 0 });
+  const [imgSrc, setImgSrc] = useState(image);
+  const [hasError, setHasError] = useState(false);
+
+  // Sync image source if prop changes (e.g. after seeding or DB update)
+  useEffect(() => {
+    setImgSrc(image);
+    setHasError(false);
+  }, [image]);
+
+  // High-quality fallback images from Unsplash
+  const fallbacks: Record<string, string> = {
+    'Male': 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1000',
+    'Female': 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=1000'
+  };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
@@ -55,11 +75,18 @@ const CoachCard: React.FC<{
         <div className="relative mb-6 shrink-0">
           <div className="w-28 h-28 md:w-32 md:h-32 rounded-3xl overflow-hidden border-2 border-lime-400/30 group-hover:border-lime-400 transition-all duration-500 shadow-[0_0_20px_rgba(163,230,53,0.1)]">
             <img 
-              src={image} 
+              src={imgSrc} 
               alt={name}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${hasError ? 'grayscale' : ''}`}
               referrerPolicy="no-referrer"
               loading="lazy"
+              onError={() => {
+                if (!hasError) {
+                  setImgSrc(fallbacks[gender] || fallbacks['Male']);
+                  setHasError(true);
+                  console.warn(`Original image for ${name} failed to load. Using fallback.`);
+                }
+              }}
             />
           </div>
           <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-lime-400 border border-lime-400 rounded-full shadow-lg">
@@ -139,53 +166,115 @@ const CoachCard: React.FC<{
 export const Coaches: React.FC = () => {
   const { scrollY } = useScroll();
   const yParallax = useTransform(scrollY, [2500, 3500], [0, 200]);
+  const [coaches, setCoaches] = useState<CoachData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const coaches = [
+  const initialCoaches: CoachData[] = [
     {
+      id: 'harold',
       name: 'Coach Harold',
       title: 'Head Strength Coach',
       tags: ['Weight Loss', 'HIIT', 'Strength'],
       exp: '8+ Years',
       gender: 'Male',
-      image: 'https://scontent.fmnl17-5.fna.fbcdn.net/v/t39.30808-6/616167005_1357308569742292_2269808994999264131_n.jpg?_nc_cat=110&ccb=1-7&_nc_sid=13d280&_nc_ohc=5S4gjwcixlEQ7kNvwHfJFnd&_nc_oc=AdopfDTcb35F73n5OxQ-Z63TyS-VepWaWe4lnAV70OhgRuXUxdUqtBS7lCyKoeYZPfs&_nc_zt=23&_nc_ht=scontent.fmnl17-5.fna&_nc_gid=aF8upCJtuXBPADB7ft49yw&_nc_ss=7b2a8&oh=00_Af0r1DTFW2DVQhrQxOzFhRJzct-RSK54nF59uduXB8CwxA&oe=69F924A2',
+      image: 'https://scontent.fmnl17-3.fna.fbcdn.net/v/t39.30808-6/641106301_1390215136451635_8039561517910346805_n.jpg?stp=dst-jpg_s206x206_tt6&_nc_cat=106&ccb=1-7&_nc_sid=a934a8&_nc_eui2=AeGI1OcdjtfEbUuchsdoKVhSXBCoA9hGVZVcEKgD2EZVlfBkPm-vKG3b9BrPd1gegJokvZv3s68_yuq7n8uJMZZw&_nc_ohc=FFjzJQvwmyoQ7kNvwFgEyrL&_nc_oc=AdqNHmkUCjTi2IyMg75nXVg8fQeQ2SPaLhLpJ6cfg5btu6fMbvteH2FZOQeUeP5SETI&_nc_zt=23&_nc_ht=scontent.fmnl17-3.fna&_nc_gid=OO4kYHbV_lXLhQ4WCJt6Lg&_nc_ss=7b2a8&oh=00_Af5LQnFHU0DdmZbvxfOtK2jMfkjq86eEx6PRk-eEsI5ctg&oe=6A083FD1',
       offer: 'Get 1 Day Free Trial • Avail 30 sessions and get Free 1 Month Membership',
       quote: 'Strength is not just physical; it\'s the will to never give up on yourself.',
-      funFact: 'Can do 50 pull-ups in a single set!'
+      funFact: 'Can do 50 pull-ups in a single set!',
+      order: 1
     },
     {
+      id: 'joeffrey',
       name: 'Coach Joeffrey',
       title: 'Conditioning Specialist',
       tags: ['Bodybuilding', 'Conditioning', 'HIIT'],
       exp: '7+ Years',
       gender: 'Male',
-      image: 'https://scontent.fmnl17-5.fna.fbcdn.net/v/t39.30808-6/616584603_1357308566408959_7429159526451463547_n.jpg?_nc_cat=110&ccb=1-7&_nc_sid=13d280&_nc_ohc=ryJSzZu_I7QQ7kNvwGi4Frx&_nc_oc=AdpV7X7U3aUBWFbBa9kPAGOzCfI7_HXHq9oqya3gBCptdHhdFgw3NDvWd6_9l3fVYFw&_nc_zt=23&_nc_ht=scontent.fmnl17-5.fna&_nc_gid=jTJON7wmXoSMLJdCGDKzgQ&_nc_ss=7b2a8&oh=00_Af30H_Q4bQVkwg0DBTbceR8Fy9cFJMwRiSWLxFKV2rnDEg&oe=69F9412F',
+      image: 'https://scontent.fmnl17-6.fna.fbcdn.net/v/t39.30808-6/640829610_1390215143118301_6384829654621801427_n.jpg?stp=dst-jpg_s206x206_tt6&_nc_cat=109&ccb=1-7&_nc_sid=a934a8&_nc_eui2=AeF3GaqEh0baGwv51JZk8HDlo9lgaA7A8oij2WBoDsDyiFNaX0ocPj16Zu2PeYSd0cIpR7bTAOTzFCdBCshPO2I0&_nc_ohc=lnsNBpc5EsAQ7kNvwFNHtZd&_nc_oc=AdqKEGjwmiQWTdjoI72M4DUK0iCwAgj3y4PQ03CgewjDH4HHqaWF0Wau_ORR2JSBwbs&_nc_zt=23&_nc_ht=scontent.fmnl17-6.fna&_nc_gid=OO4kYHbV_lXLhQ4WCJt6Lg&_nc_ss=7b2a8&oh=00_Af4u02IYjOo4kBR0bqnmoC2P1pvvBq48AU3I8VPytkYscg&oe=6A083B98',
       offer: 'Get 1 Day Free Trial • Avail 30 sessions and get Free 1 Month Membership',
       quote: 'Consistency beats intensity every single time.',
-      funFact: 'Loves ultra-marathons and early morning runs.'
+      funFact: 'Loves ultra-marathons and early morning runs.',
+      order: 2
     },
     {
-      name: 'Coach Teresa',
+      id: 'there',
+      name: 'Coach There',
       title: 'Fitness & Wellness Coach',
       tags: ['Female Fitness', 'Yoga', 'Weight Loss'],
       exp: '6+ Years',
       gender: 'Female',
-      image: 'https://scontent.fmnl17-1.fna.fbcdn.net/v/t39.30808-6/616839272_1357308573075625_7631671944602560753_n.jpg?_nc_cat=101&ccb=1-7&_nc_sid=13d280&_nc_ohc=nEDpR1rOozYQ7kNvwHF2Qe1&_nc_oc=AdoykXAXB77zNh8vZydLuZT7OQpZYhX9ruywu1yXaNwHJaXtkUw9cUhGS1r4xf0Bvjg&_nc_zt=23&_nc_ht=scontent.fmnl17-1.fna&_nc_gid=yNlU_GRYMtZA1Ebu43Prfw&_nc_ss=7b2a8&oh=00_Af0sRua79TUijzYEpZxTWEsOJIY92z-SPTkh4srhU1vTSA&oe=69F919FB',
+      image: 'https://scontent.fmnl17-1.fna.fbcdn.net/v/t39.30808-6/639392449_1390215153118300_6311419387162876756_n.jpg?stp=dst-jpg_s206x206_tt6&_nc_cat=100&ccb=1-7&_nc_sid=a934a8&_nc_eui2=AeGZkG-WqfyHYFyV0p-VGYu_j6wJ2BX4iPmPrAnYFfiI-XV7Muv1hFUUGdPgenA1CoyexMbVnRbsV2nelNPZdB7_&_nc_ohc=Ai2NxYPwXrwQ7kNvwFqofPS&_nc_oc=AdpChLqniaucJ8dWUUq4v-IQhqGC2SuYkvBCSGqoEIXR7Quiqc2hBX8H6a7kVwGLht0&_nc_zt=23&_nc_ht=scontent.fmnl17-1.fna&_nc_gid=OO4kYHbV_lXLhQ4WCJt6Lg&_nc_ss=7b2a8&oh=00_Af7qvo5elGgmu96kXds_zJKALnmUYN8jofoajYxjshfQtA&oe=6A08574B',
       offer: 'Get 1 Day Free Trial • Avail 30 sessions and get Free 1 Month Membership',
       quote: 'Wellness is a journey of balance and self-love.',
-      funFact: 'Practices yoga for over 10 years and loves herbal teas.'
+      funFact: 'Practices yoga for over 10 years and loves herbal teas.',
+      order: 3
     },
     {
+      id: 'alvin',
       name: 'Coach Alvin',
       title: 'Powerlifting Expert',
       tags: ['Powerlifting', 'Strength', 'HIIT'],
       exp: '9+ Years',
       gender: 'Male',
-      image: 'https://scontent.fmnl17-3.fna.fbcdn.net/v/t39.30808-6/616803666_1357308656408950_346872988368576245_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=13d280&_nc_ohc=CpGB_qsMKDUQ7kNvwEgxQVk&_nc_oc=Adp_S6dKqZ99Fj4aZt1jOeYtdmZUPt2V1zg19i0pVSt01SsvP1qjdAP6OxTUkB0ptao&_nc_zt=23&_nc_ht=scontent.fmnl17-3.fna&_nc_gid=1omMXkGyJY2WQRFaQDqXOQ&_nc_ss=7b2a8&oh=00_Af1JC619NxZ6m_KpRldVFLVtruaR4Kzf4tbR6vgL6VX0cQ&oe=69F91E93',
+      image: 'https://scontent.fmnl17-7.fna.fbcdn.net/v/t39.30808-6/641516604_1390215203118295_2261442574900161777_n.jpg?stp=dst-jpg_s206x206_tt6&_nc_cat=108&ccb=1-7&_nc_sid=a934a8&_nc_eui2=AeEMb-MGtl2WEogam7KU19GYF6kT8H8dYcMXqRPwfx1hw2jAlTvLYKDbRtfrHlTZjebYHKiI6yZMp1ODQxNqG1lu&_nc_ohc=Qa_9CmPCGqIQ7kNvwGcAlVA&_nc_oc=AdoaY-7SI37oZi2VWjUE_mNf__FA29KK_MEMYguGtjK2ulTcIDFROrJPZBMH-8ZLe9I&_nc_zt=23&_nc_ht=scontent.fmnl17-7.fna&_nc_gid=OO4kYHbV_lXLhQ4WCJt6Lg&_nc_ss=7b2a8&oh=00_Af4thIJMMPcrEjnBOFxtIEozYsmzWjbhKtdw1kca5dd-rg&oe=6A085E57',
       offer: 'Get 1 Day Free Trial • Avail 30 sessions and get Free 1 Month Membership',
       quote: 'The only weight that matters is the one you haven\'t lifted yet.',
-      funFact: 'National powerlifting record holder in his category.'
+      funFact: 'National powerlifting record holder in his category.',
+      order: 4
     }
   ];
+
+  useEffect(() => {
+    const q = query(collection(db, 'coaches'), orderBy('order', 'asc'));
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      if (snapshot.empty) {
+        // Collection is empty: Show initial data immediately
+        setCoaches(initialCoaches);
+        setIsLoading(false);
+        
+        // Attempt to sync to cloud ONLY if user is authenticated (prevents 403 errors)
+        if (auth.currentUser) {
+          seedCoaches();
+        }
+      } else {
+        const coachList = snapshot.docs.map(doc => doc.data() as CoachData);
+        setCoaches(coachList);
+        setIsLoading(false);
+      }
+    }, (error) => {
+      // If list fails (usually wouldn't for read: if true), still show local
+      setCoaches(initialCoaches);
+      setIsLoading(false);
+      console.warn("Could not read from Firestore. Using local fallback.");
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const seedCoaches = async () => {
+    if (!auth.currentUser) return;
+    
+    try {
+      // We check if we can write by trying the first one; if it fails, we know we aren't admin
+      // and we stop immediately to avoid multiple 403 errors in console.
+      console.log("Attempting to sync coach profiles to cloud...");
+      const firstCoach = initialCoaches[0];
+      await setDoc(doc(db, 'coaches', firstCoach.id), firstCoach);
+      
+      // If the first one succeeded, proceed with others
+      for (let i = 1; i < initialCoaches.length; i++) {
+        await setDoc(doc(db, 'coaches', initialCoaches[i].id), initialCoaches[i]);
+      }
+      console.log("Cloud sync complete.");
+    } catch (error: any) {
+      if (error.code === 'permission-denied') {
+        console.info("Cloud sync skipped: User does not have admin permissions to modify coach profiles.");
+      } else {
+        console.error("Cloud sync failed:", error);
+      }
+    }
+  };
 
   return (
     <section id="coaches" className="py-24 bg-zinc-950 relative overflow-hidden">
@@ -221,9 +310,16 @@ export const Coaches: React.FC = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
-          {coaches.map((coach, index) => (
-            <CoachCard key={index} {...coach} />
-          ))}
+          {isLoading ? (
+            // Skeleton or loading state
+            [1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-[500px] bg-zinc-900/40 rounded-[2.5rem] animate-pulse border border-white/5" />
+            ))
+          ) : (
+            coaches.map((coach) => (
+              <CoachCard key={coach.id} {...coach} />
+            ))
+          )}
         </div>
 
         {/* PT Pricing Table */}

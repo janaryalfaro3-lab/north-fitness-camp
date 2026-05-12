@@ -68,6 +68,25 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["fullName", "mobileNumber", "date", "timeSlot", "coachId", "status", "createdAt"]
+    },
+    "Coach": {
+      "title": "Coach",
+      "description": "A fitness coach at North Fitness Camp.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "title": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "exp": { "type": "string" },
+        "gender": { "type": "string" },
+        "image": { "type": "string" },
+        "offer": { "type": "string" },
+        "quote": { "type": "string" },
+        "funFact": { "type": "string" },
+        "order": { "type": "number" }
+      },
+      "required": ["id", "name", "title", "gender", "image", "order"]
     }
   },
   "firestore": {
@@ -86,6 +105,10 @@
     "/bookings/{bookingId}": {
       "schema": "Booking",
       "description": "Collection of session bookings."
+    },
+    "/coaches/{coachId}": {
+      "schema": "Coach",
+      "description": "Collection of coach profiles."
     }
   }
 }
