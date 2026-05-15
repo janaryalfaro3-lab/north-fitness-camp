@@ -86,36 +86,52 @@ service cloud.firestore {
              data.createdAt is timestamp;
     }
 
+    function isValidCoach(data) {
+      let requiredFields = ['id', 'name', 'title', 'tags', 'exp', 'gender', 'image', 'order'];
+      return data.keys().hasAll(requiredFields) &&
+             data.keys().size() >= 8 && data.keys().size() <= 11 &&
+             data.id is string && data.id.size() <= 128 &&
+             data.name is string && data.name.size() <= 100 &&
+             data.title is string && data.title.size() <= 100 &&
+             data.tags is list && data.tags.size() <= 10 &&
+             data.exp is string && data.exp.size() <= 50 &&
+             data.gender is string && data.gender in ['Male', 'Female', 'Non-binary'] &&
+             data.image is string && data.image.size() <= 1000 &&
+             data.order is int;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
     // ===============================================================
     // COLLECTION RULES
     // ===============================================================
 
     // Path: /users/{userId}
     match /users/{userId} {
-      allow get: if isValidId(userId) && isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
       allow list: if isAdmin();
       
-      allow create: if isValidId(userId) && isSignedIn() && request.auth.uid == userId && 
+      allow create: if isValidId(userId) && isOwner(userId) && 
                     isValidUser(incoming()) && incoming().createdAt == request.time;
       
       allow update: if isValidId(userId) && (
-        isSignedIn() && (
-          isAdmin() || (
-            request.auth.uid == userId && 
-            isValidUser(incoming()) &&
-            incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL'])
-          )
+        isAdmin() || (
+          isOwner(userId) && 
+          isValidUser(incoming()) &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL'])
         )
       );
 
-      allow delete: if isValidId(userId) && isAdmin();
+      allow delete: if isAdmin();
     }
 
     // Path: /subscribers/{email}
     match /subscribers/{email} {
       allow get, list: if isAdmin();
       allow create: if isValidSubscriber(incoming()) && incoming().email == email && incoming().subscribedAt == request.time;
-      allow update: if isAdmin();
+      allow update: if isValidSubscriber(incoming()) && incoming().email == email;
       allow delete: if isAdmin();
     }
 
@@ -137,7 +153,7 @@ service cloud.firestore {
     // Path: /coaches/{coachId}
     match /coaches/{coachId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin() && isValidId(coachId) && isValidCoach(incoming());
     }
   }
 }

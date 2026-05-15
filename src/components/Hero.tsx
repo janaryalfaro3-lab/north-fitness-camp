@@ -32,24 +32,27 @@ export const Hero: React.FC = () => {
 
   // Extra check to ensure video is actually playing
   useEffect(() => {
+    let checkCount = 0;
     const interval = setInterval(() => {
+      checkCount++;
       if (videoRef.current && videoRef.current.readyState >= 3 && !videoRef.current.paused) {
         setVideoLoaded(true);
         clearInterval(interval);
       }
-    }, 1000);
-    
-    // Safety timeout: if it hasn't loaded in 8 seconds, flag it
-    const timeout = setTimeout(() => {
-      if (!videoLoaded) {
-        console.warn("Video didn't start playing within 8s.");
+      
+      // If we've checked 10 times (10s) and still not playing, log it once
+      if (checkCount === 10 && !videoLoaded) {
+        console.warn("Video still not playing after 10s. Checking sources...");
       }
-    }, 8000);
+    }, 1000);
 
-    return () => {
-      clearInterval(interval);
-      clearTimeout(timeout);
-    };
+    return () => clearInterval(interval);
+  }, [videoLoaded]);
+
+  useEffect(() => {
+    if (videoRef.current && videoLoaded) {
+      videoRef.current.play().catch(() => {});
+    }
   }, [videoLoaded]);
 
   useEffect(() => {
@@ -215,6 +218,7 @@ export const Hero: React.FC = () => {
           muted 
           loop 
           playsInline
+          crossOrigin="anonymous"
           preload="auto"
           poster="https://images.unsplash.com/photo-1540497077202-7c8a3999166f?q=80&w=2070"
           className={`w-full h-full object-contain md:object-cover transition-opacity duration-1000 ${videoLoaded ? 'opacity-80' : 'opacity-0'}`}
@@ -229,23 +233,28 @@ export const Hero: React.FC = () => {
             videoRef.current?.load();
             videoRef.current?.play().catch(() => {});
           }}
-          onError={() => {
-            console.error("Critical video error. Falling back to static image.");
-            setVideoError(true);
-            setVideoLoaded(false);
+          onError={(e) => {
+            const video = e.currentTarget;
+            console.warn(`Video source error on: ${video.currentSrc}. Network state: ${video.networkState}`);
+            
+            // If all sources have been tried (networkState 3 means no source)
+            if (video.networkState === 3 || (video.error && !video.canPlayType('video/mp4'))) {
+              setVideoError(true);
+              setVideoLoaded(false);
+            }
           }}
         >
-          {/* Main high-performance CDN links */}
-          <source src="https://cdn.jsdelivr.net/gh/janaryalfaro3-lab/north-fitness-camp@main/video.mp4.mp4" type="video/mp4" />
-          <source src="https://raw.githubusercontent.com/janaryalfaro3-lab/north-fitness-camp/main/video.mp4.mp4" type="video/mp4" />
+          {/* User-uploaded custom video */}
+          <source src="/video.mp4" type="video/mp4" />
           
-          {/* GitHub Redirects as failover */}
-          <source src="https://github.com/janaryalfaro3-lab/north-fitness-camp/blob/main/video.mp4.mp4?raw=true" type="video/mp4" />
-          <source src="https://raw.githubusercontent.com/janaryalfaro3-lab/north-fitness-camp/master/video.mp4.mp4" type="video/mp4" />
+          {/* Main high-performance Direct Links */}
+          <source src="https://player.vimeo.com/external/494252666.sd.mp4?s=72ad1385cf6a08466e130c25a0a382e2df5c093a&profile_id=164&oauth2_token_id=57447761" type="video/mp4" />
+          <source src="https://player.vimeo.com/external/370335048.sd.mp4?s=1240c57d77180f164627d057790a6e03328e185e&profile_id=164" type="video/mp4" />
           
-          {/* Single extension fallbacks if double was a mistake */}
+          {/* GitHub / CDN Fallbacks (if the user uploads their own video under these names) */}
           <source src="https://cdn.jsdelivr.net/gh/janaryalfaro3-lab/north-fitness-camp@main/video.mp4" type="video/mp4" />
           <source src="https://raw.githubusercontent.com/janaryalfaro3-lab/north-fitness-camp/main/video.mp4" type="video/mp4" />
+          <source src="https://github.com/janaryalfaro3-lab/north-fitness-camp/blob/main/video.mp4?raw=true" type="video/mp4" />
           
           Your browser does not support the video tag.
         </video>
